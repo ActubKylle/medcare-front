@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/api';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // Use location to determine current path
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
@@ -28,6 +29,24 @@ const Navbar = () => {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+
+  // Helper function to check if link is active
+  const isActive = (path) => {
+    // For dashboard links, check exact match
+    if (path.endsWith('dashboard')) {
+      return location.pathname === path;
+    }
+    // For other links, check if the current path starts with the link path
+    return location.pathname.startsWith(path);
+  };
+
+  // CSS classes for active and inactive links
+  const activeLinkClass = "text-white bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center";
+  const inactiveLinkClass = "text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center";
+  
+  // Mobile menu active/inactive classes
+  const activeMobileLinkClass = "block px-4 py-2 text-white bg-blue-700 rounded-md text-base font-medium";
+  const inactiveMobileLinkClass = "block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium";
 
   return (
     <nav className="bg-gradient-to-r from-blue-600 to-blue-800 shadow-lg">
@@ -57,7 +76,7 @@ const Navbar = () => {
                   <div className="flex items-center">
                     <a
                       href="/admin/dashboard"
-                      className="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                      className={isActive('/admin/dashboard') ? activeLinkClass : inactiveLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate('/admin/dashboard');
@@ -69,24 +88,24 @@ const Navbar = () => {
                       Dashboard
                     </a>
                     <a
-                      href="/admin/patients/add"
-                      className="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                      href="/admin/patients"
+                      className={isActive('/admin/patients') ? activeLinkClass : inactiveLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate('/admin/patients/add');
+                        navigate('/admin/patients');
                       }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                       </svg>
-                      Patients
+                      Patients 
                     </a>
                     <a
-                      href="/admin/doctors/add"
-                      className="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                      href="/admin/doctors"
+                      className={isActive('/admin/doctors') ? activeLinkClass : inactiveLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate('/admin/doctors/add');
+                        navigate('/admin/doctors');
                       }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -101,7 +120,7 @@ const Navbar = () => {
                   <div className="flex items-center">
                     <a
                       href="/doctor/dashboard"
-                      className="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
+                      className={isActive('/doctor/dashboard') ? activeLinkClass : inactiveLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate('/doctor/dashboard');
@@ -112,7 +131,19 @@ const Navbar = () => {
                       </svg>
                       Dashboard
                     </a>
-                
+                    <a
+                      href="/doctor/patients"
+                      className={isActive('/doctor/patients') ? activeLinkClass : inactiveLinkClass}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate('/doctor/patients');
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                      </svg>
+                      Patients
+                    </a>
                   </div>
                 )}
                 
@@ -132,7 +163,7 @@ const Navbar = () => {
               <div className="flex items-center space-x-4">
                 <a
                   href="/login"
-                  className="text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className={isActive('/login') ? activeLinkClass : inactiveLinkClass}
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/login');
@@ -142,7 +173,9 @@ const Navbar = () => {
                 </a>
                 <a
                   href="/register"
-                  className="bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className={isActive('/register') 
+                    ? "bg-blue-700 text-white hover:bg-blue-800 px-4 py-2 rounded-md text-sm font-medium transition-colors" 
+                    : "bg-white text-blue-700 hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition-colors"}
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/register');
@@ -187,7 +220,7 @@ const Navbar = () => {
                   <div className="space-y-1 mt-2">
                     <a
                       href="/admin/dashboard"
-                      className="block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium"
+                      className={isActive('/admin/dashboard') ? activeMobileLinkClass : inactiveMobileLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate('/admin/dashboard');
@@ -197,26 +230,26 @@ const Navbar = () => {
                       Dashboard
                     </a>
                     <a
-                      href="/admin/patients/add"
-                      className="block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium"
+                      href="/admin/patients"
+                      className={isActive('/admin/patients') ? activeMobileLinkClass : inactiveMobileLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate('/admin/patients/add');
+                        navigate('/admin/patients');
                         setMobileMenuOpen(false);
                       }}
                     >
-                      Add Patient
+                      Patients
                     </a>
                     <a
-                      href="/admin/doctors/add"
-                      className="block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium"
+                      href="/admin/doctors"
+                      className={isActive('/admin/doctors') ? activeMobileLinkClass : inactiveMobileLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate('/admin/doctors/add');
+                        navigate('/admin/doctors');
                         setMobileMenuOpen(false);
                       }}
                     >
-                      Add Doctor
+                      Doctors
                     </a>
                   </div>
                 )}
@@ -225,7 +258,7 @@ const Navbar = () => {
                   <div className="space-y-1 mt-2">
                     <a
                       href="/doctor/dashboard"
-                      className="block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium"
+                      className={isActive('/doctor/dashboard') ? activeMobileLinkClass : inactiveMobileLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate('/doctor/dashboard');
@@ -236,7 +269,7 @@ const Navbar = () => {
                     </a>
                     <a
                       href="/doctor/patients"
-                      className="block px-4 py-2 text-white hover:bg-blue-700 rounded-md text-base font-medium"
+                      className={isActive('/doctor/patients') ? activeMobileLinkClass : inactiveMobileLinkClass}
                       onClick={(e) => {
                         e.preventDefault();
                         navigate('/doctor/patients');
@@ -267,7 +300,7 @@ const Navbar = () => {
               <div className="space-y-2 px-4 pt-2">
                 <a
                   href="/login"
-                  className="block text-white hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium"
+                  className={isActive('/login') ? activeMobileLinkClass : inactiveMobileLinkClass}
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/login');
@@ -278,7 +311,9 @@ const Navbar = () => {
                 </a>
                 <a
                   href="/register"
-                  className="block bg-white text-blue-700 hover:bg-gray-100 px-3 py-2 rounded-md text-base font-medium"
+                  className={isActive('/register') 
+                    ? "block bg-blue-700 text-white px-3 py-2 rounded-md text-base font-medium" 
+                    : "block bg-white text-blue-700 hover:bg-gray-100 px-3 py-2 rounded-md text-base font-medium"}
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/register');

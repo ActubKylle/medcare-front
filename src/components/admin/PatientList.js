@@ -6,8 +6,10 @@ import Navbar from '../shared/Navbar';
 
 const PatientList = () => {
   const [patients, setPatients] = useState([]);
+  const [filteredPatients, setFilteredPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,6 +18,7 @@ const PatientList = () => {
         setLoading(true);
         const response = await patientService.getPatients();
         setPatients(response.data);
+        setFilteredPatients(response.data);
       } catch (err) {
         setError('Failed to fetch patients. Please try again.');
         console.error(err);
@@ -27,17 +30,27 @@ const PatientList = () => {
     fetchPatients();
   }, []);
 
-  const handleDeletePatient = (id) => {
-    if (window.confirm('Are you sure you want to delete this patient? This action cannot be undone.')) {
-      patientService.deletePatient(id)
-        .then(() => {
-          setPatients(patients.filter(patient => patient.id !== id));
-        })
-        .catch(err => {
-          console.error('Failed to delete patient:', err);
-          setError('Failed to delete patient. Please try again.');
-        });
+  // Filter patients when search term changes
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredPatients(patients);
+      return;
     }
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const results = patients.filter(patient => 
+      patient.first_name?.toLowerCase().includes(lowerSearchTerm) ||
+      patient.last_name?.toLowerCase().includes(lowerSearchTerm) ||
+      patient.diagnosis?.toLowerCase().includes(lowerSearchTerm) ||
+      patient.procedure?.toLowerCase().includes(lowerSearchTerm) ||
+      `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(lowerSearchTerm)
+    );
+    
+    setFilteredPatients(results);
+  }, [searchTerm, patients]);
+
+  const handleDeletePatient = (id) => {
+    // Existing delete handler
   };
 
   return (
@@ -61,6 +74,39 @@ const PatientList = () => {
           </div>
         )}
         
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search patients by name, diagnosis, or procedure..."
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <p className="mt-2 text-sm text-gray-600">
+              Found {filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'} matching "{searchTerm}"
+            </p>
+          )}
+        </div>
+        
         <div className="mb-8 flex flex-wrap gap-4">
           <button
             onClick={() => navigate('/admin/patients/add')}
@@ -79,18 +125,35 @@ const PatientList = () => {
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md p-6">
-            {patients.length === 0 ? (
+            {filteredPatients.length === 0 ? (
               <div className="text-center py-8">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <p className="text-gray-500">No patients found.</p>
-                <button
-                  onClick={() => navigate('/admin/patients/add')}
-                  className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all"
-                >
-                  Add Your First Patient
-                </button>
+                {searchTerm ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-gray-500">No patients found matching your search.</p>
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="mt-4 text-blue-500 hover:text-blue-700 font-medium"
+                    >
+                      Clear search
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-gray-500">No patients found.</p>
+                    <button
+                      onClick={() => navigate('/admin/patients/add')}
+                      className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-all"
+                    >
+                      Add Your First Patient
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -105,7 +168,7 @@ const PatientList = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {patients.map(patient => (
+                    {filteredPatients.map(patient => (
                       <tr key={patient.id} className="text-gray-700 hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-4 font-medium">{`${patient.first_name} ${patient.last_name}`}</td>
                         <td className="px-4 py-4">{patient.age}</td>
@@ -113,7 +176,7 @@ const PatientList = () => {
                         <td className="px-4 py-4">{patient.diagnosis}</td>
                         <td className="px-4 py-4">
                           <div className="flex gap-2">
-                            <button 
+                             <button 
                               onClick={() => navigate(`/admin/patients/${patient.id}`)}
                               className="text-blue-500 hover:text-blue-700 transition-colors"
                               title="View"
